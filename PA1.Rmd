@@ -1,0 +1,79 @@
+---
+title: "Reproducible Research: Peer Assessment 1"
+output: 
+  html_document:
+    keep_md: true
+---
+
+
+## Loading and preprocessing the data
+```{r, warning=FALSE}
+library(dplyr)
+library(ggplot2)
+unzip("activity.zip")
+activityData<-read.csv("activity.csv")
+```
+
+
+## What is mean total number of steps taken per day?
+```{r, warning=FALSE}
+activityByDay<-group_by(select(activityData,date,steps),date)
+stepsPerDay<-summarise(activityByDay,sum(steps))
+
+names(stepsPerDay)[2]<-"total.steps"
+
+# hist(stepsPerDay$total.steps,xlab="Number of steps per day",
+#      main="Histogram of number of steps taken per day",breaks=10,
+#      col=topo.colors(1))
+# 
+# g<-ggplot(total.steps,aes(stepsPerDay))
+# g<-g+geom_histogram()
+
+g<-ggplot(stepsPerDay,aes(total.steps))
+g<-g+geom_histogram(binwidth = 2500,col="white")
+g<-g+ggtitle("Steps taken per day")
+g<-g+labs(y="Frequency",x = "Total number of steps per day")
+print(g)
+
+meanStepsPerDay<-mean(stepsPerDay$total.steps,na.rm=TRUE)
+medianStepsPerDay<-median(stepsPerDay$total.steps,na.rm=TRUE)
+
+
+```
+
+* Mean number of steps taken per day - ```r meanStepsPerDay ```
+* Median number of steps per day - ```r medianStepsPerDay```
+
+
+## What is the average daily activity pattern?
+
+```{r}
+
+stepsByTime<-group_by(select(activityData,interval,steps),interval)
+stepsByTime<-summarise(stepsByTime,mean(steps,na.rm=TRUE))
+
+names(stepsByTime)<-c("Interval","Average.Steps")
+
+timeMin<-stepsByTime$Interval%%100
+timeHour<-floor(stepsByTime$Interval/100)
+stepsByTime$timeOfDay<-paste(timeHour,":",timeMin)
+
+timeAtmax<-stepsByTime[stepsByTime$Average.Steps==max(stepsByTime$Average.Steps),]
+
+g<-ggplot(stepsByTime,aes(y=Average.Steps,x=Interval,color=topo.colors(1)))
+g<-g+geom_line()
+g<-g+ theme(legend.position="none")
+g<-g+ggtitle(paste("Maximum steps reported on an average ",round(timeAtmax$Average.Steps,-1)))
+g<-g+labs(y="Average Steps",x = "Time in a day (5-min interval)")
+print(g)
+
+```
+
+At 5-minute interval, on average across all the days maximum number of steps 
+reported at ```r timeAtmax$timeOfDay```
+
+## Imputing missing values
+
+
+
+## Are there differences in activity patterns between weekdays and weekends?
