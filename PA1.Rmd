@@ -63,8 +63,6 @@ timeAtmax<-stepsByTime[stepsByTime$Average.Steps==max(stepsByTime$Average.Steps)
 g<-ggplot(stepsByTime,aes(y=Average.Steps,x=Interval,color=topo.colors(1)))
 g<-g+geom_line()
 g<-g+ theme(legend.position="none")
-g<-g+ggtitle(paste("Maximum steps reported on an average:",
-                   round(timeAtmax$Average.Steps,0)))
 g<-g+labs(y="Average Steps",x = "Time in a day (5-min interval)")
 print(g)
 
