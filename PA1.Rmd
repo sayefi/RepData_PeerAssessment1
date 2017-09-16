@@ -1,8 +1,10 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
+title: 'Reproducible Research: Peer Assessment 1'
+output:
   html_document:
-    keep_md: true
+    keep_md: yes
+  pdf_document: default
+  word_document: default
 ---
 
 
@@ -41,8 +43,8 @@ medianStepsPerDay<-median(stepsPerDay$total.steps,na.rm=TRUE)
 
 ```
 
-* Mean number of steps taken per day - ```r meanStepsPerDay ```
-* Median number of steps per day - ```r medianStepsPerDay```
+* Mean number of steps taken per day - ```r as.integer(meanStepsPerDay) ```        
+* Median number of steps per day - ```r medianStepsPerDay```  
 
 
 ## What is the average daily activity pattern?
@@ -64,6 +66,7 @@ g<-ggplot(stepsByTime,aes(y=Average.Steps,x=Interval,color=topo.colors(1)))
 g<-g+geom_line()
 g<-g+ theme(legend.position="none")
 g<-g+labs(y="Average Steps",x = "Time in a day (5-min interval)")
+g<-g+ggtitle(paste("Maximum number of steps reported at",timeAtmax$timeOfDay))
 print(g)
 
 ```
@@ -73,6 +76,92 @@ reported at ```r timeAtmax$timeOfDay```
 
 ## Imputing missing values
 
+```{r}
+countNa<-sum(is.na(activityData$steps))
 
+```
+
+Total number of missing values ```r countNa```
+
+```{r}
+
+activityMerged<-merge(activityData,stepsByTime,by.x="interval",by.y="Interval")
+
+activityMerged<-transform(activityMerged,steps=ifelse(is.na(steps),Average.Steps,steps))
+
+activityDataNaRemoved<-select(activityMerged,steps,date,interval)
+
+```
+
+NA removed with average numbers of steps taken around that time interval. New 
+dataset produced
+
+```{r, warning=FALSE}
+activityByDay<-group_by(select(activityDataNaRemoved,date,steps),date)
+stepsPerDay<-summarise(activityByDay,sum(steps))
+
+names(stepsPerDay)[2]<-"total.steps"
+
+# hist(stepsPerDay$total.steps,xlab="Number of steps per day",
+#      main="Histogram of number of steps taken per day",breaks=10,
+#      col=topo.colors(1))
+# 
+# g<-ggplot(total.steps,aes(stepsPerDay))
+# g<-g+geom_histogram()
+
+g<-ggplot(stepsPerDay,aes(total.steps))
+g<-g+geom_histogram(binwidth = 2500,col="white")
+g<-g+ggtitle("Steps taken per day")
+g<-g+labs(y="Frequency",x = "Total number of steps per day (NAs removed)")
+print(g)
+
+
+meanStepsPerDay<-mean(stepsPerDay$total.steps)
+medianStepsPerDay<-median(stepsPerDay$total.steps)
+
+
+```
+After imputing missing values  
+* Mean number of steps taken per day - ```r as.integer(meanStepsPerDay) ```  
+* Median number of steps per day - ```r as.integer(medianStepsPerDay)```   
+
+These numbers are not significantly different than before
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```{r}
+activityDataNaRemoved<-transform(activityDataNaRemoved,
+                                 date=as.Date(date,"%Y-%m-%d"))
+
+activityDataNaRemoved<-transform(activityDataNaRemoved, weekday=weekdays(date))
+
+activityDataNaRemoved<-transform(activityDataNaRemoved, 
+                                   wday=ifelse(weekday %in% c("Saturday","Sunday"),
+                                   "Weekend","Weekday"")))
+
+
+stepsByTime<-group_by(select(activityDataNaRemoved,interval,steps,isWeekday),
+                      interval,isWeekday)
+stepsByTime<-summarise(stepsByTime,mean(steps))
+
+names(stepsByTime)<-c("Interval","is.Weekday","Average.Steps")
+
+# timeMin<-stepsByTime$Interval%%100
+# timeHour<-floor(stepsByTime$Interval/100)
+# stepsByTime$timeOfDay<-paste(timeHour,":",timeMin)
+# 
+# timeAtmax<-stepsByTime[stepsByTime$Average.Steps==max(stepsByTime$Average.Steps),]
+
+# ,color=topo.colors(2)
+
+g<-ggplot(stepsByTime,aes(y=Average.Steps,x=Interval))
+g<-g+geom_line()
+g<-g+facet_grid(is.Weekday~.,labeller = function(is.Weekday){
+                                        x<-ifelse(is.Weekday,"Weekday","Weekend")}
+                )
+g<-g+ theme(legend.position="none")
+g<-g+labs(y="Average Steps",x = "Time in a day (5-min interval)")
+g<-g+ggtitle(paste("Maximum number of steps reported at",timeAtmax$timeOfDay))
+print(g)
+
+```
