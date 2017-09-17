@@ -14,6 +14,7 @@ library(dplyr)
 library(ggplot2)
 unzip("activity.zip")
 activityData<-read.csv("activity.csv")
+str(activityData)
 ```
 
 
@@ -23,13 +24,6 @@ activityByDay<-group_by(select(activityData,date,steps),date)
 stepsPerDay<-summarise(activityByDay,sum(steps))
 
 names(stepsPerDay)[2]<-"total.steps"
-
-# hist(stepsPerDay$total.steps,xlab="Number of steps per day",
-#      main="Histogram of number of steps taken per day",breaks=10,
-#      col=topo.colors(1))
-# 
-# g<-ggplot(total.steps,aes(stepsPerDay))
-# g<-g+geom_histogram()
 
 g<-ggplot(stepsPerDay,aes(total.steps))
 g<-g+geom_histogram(binwidth = 2500,col="white")
@@ -77,11 +71,16 @@ reported at ```r timeAtmax$timeOfDay```
 ## Imputing missing values
 
 ```{r}
+summary(activityData)
 countNa<-sum(is.na(activityData$steps))
+
 
 ```
 
 Total number of missing values ```r countNa```
+
+**Strategy to remove NAs** Replace NAs with average steps taken in the 5-min 
+time slot on other days
 
 ```{r}
 
@@ -91,10 +90,11 @@ activityMerged<-transform(activityMerged,steps=ifelse(is.na(steps),Average.Steps
 
 activityDataNaRemoved<-select(activityMerged,steps,date,interval)
 
+summary(activityDataNaRemoved)
+
 ```
 
-NA removed with average numbers of steps taken around that time interval. New 
-dataset produced
+Redraw the histogram after replacing NAs
 
 ```{r, warning=FALSE}
 activityByDay<-group_by(select(activityDataNaRemoved,date,steps),date)
@@ -148,16 +148,5 @@ g<-g+ theme(legend.position="none")
 g<-g+labs(y="Average Steps",x = "Time in a day (5-min interval)")
 g<-g+ggtitle("Difference between averge steps taken in Weekday vs Weekend")
 print(g)
-
-# g<-ggplot(stepsByTime,aes(y=Average.Steps,x=Interval,color=wday,width=1.2))
-# g<-g+geom_line()
-# g<-g+ scale_colour_discrete(name  ="Weekday or weekend",
-#                           breaks=c("Weekday", "Weekend"),
-#                           labels=c("Weekday", "Weekend"))
-# g<-g+ theme(legend.position=c(.8, .8))
-# g<-g+labs(y="Average Steps",x = "Time in a day (5-min interval)")
-# g<-g+ggtitle("Difference between averge steps taken in Weekday vs Weekend")
-# print(g)
-
 
 ```

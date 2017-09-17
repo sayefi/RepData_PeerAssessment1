@@ -28,6 +28,14 @@ library(dplyr)
 library(ggplot2)
 unzip("activity.zip")
 activityData<-read.csv("activity.csv")
+str(activityData)
+```
+
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : Factor w/ 61 levels "2012-10-01","2012-10-02",..: 1 1 1 1 1 1 1 1 1 1 ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
 ```
 
 
@@ -38,13 +46,6 @@ activityByDay<-group_by(select(activityData,date,steps),date)
 stepsPerDay<-summarise(activityByDay,sum(steps))
 
 names(stepsPerDay)[2]<-"total.steps"
-
-# hist(stepsPerDay$total.steps,xlab="Number of steps per day",
-#      main="Histogram of number of steps taken per day",breaks=10,
-#      col=topo.colors(1))
-# 
-# g<-ggplot(total.steps,aes(stepsPerDay))
-# g<-g+geom_histogram()
 
 g<-ggplot(stepsPerDay,aes(total.steps))
 g<-g+geom_histogram(binwidth = 2500,col="white")
@@ -96,10 +97,28 @@ reported at ``8 : 35``
 
 
 ```r
+summary(activityData)
+```
+
+```
+##      steps                date          interval     
+##  Min.   :  0.00   2012-10-01:  288   Min.   :   0.0  
+##  1st Qu.:  0.00   2012-10-02:  288   1st Qu.: 588.8  
+##  Median :  0.00   2012-10-03:  288   Median :1177.5  
+##  Mean   : 37.38   2012-10-04:  288   Mean   :1177.5  
+##  3rd Qu.: 12.00   2012-10-05:  288   3rd Qu.:1766.2  
+##  Max.   :806.00   2012-10-06:  288   Max.   :2355.0  
+##  NA's   :2304     (Other)   :15840
+```
+
+```r
 countNa<-sum(is.na(activityData$steps))
 ```
 
 Total number of missing values ``2304``
+
+**Strategy to remove NAs** Replace NAs with average steps taken in the 5-min 
+time slot on other days
 
 
 ```r
@@ -108,10 +127,22 @@ activityMerged<-merge(activityData,stepsByTime,by.x="interval",by.y="Interval")
 activityMerged<-transform(activityMerged,steps=ifelse(is.na(steps),Average.Steps,steps))
 
 activityDataNaRemoved<-select(activityMerged,steps,date,interval)
+
+summary(activityDataNaRemoved)
 ```
 
-NA removed with average numbers of steps taken around that time interval. New 
-dataset produced
+```
+##      steps                date          interval     
+##  Min.   :  0.00   2012-10-01:  288   Min.   :   0.0  
+##  1st Qu.:  0.00   2012-10-02:  288   1st Qu.: 588.8  
+##  Median :  0.00   2012-10-03:  288   Median :1177.5  
+##  Mean   : 37.38   2012-10-04:  288   Mean   :1177.5  
+##  3rd Qu.: 27.00   2012-10-05:  288   3rd Qu.:1766.2  
+##  Max.   :806.00   2012-10-06:  288   Max.   :2355.0  
+##                   (Other)   :15840
+```
+
+Redraw the histogram after replacing NAs
 
 
 ```r
@@ -171,15 +202,3 @@ print(g)
 ```
 
 ![](PA1_template_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
-
-```r
-# g<-ggplot(stepsByTime,aes(y=Average.Steps,x=Interval,color=wday,width=1.2))
-# g<-g+geom_line()
-# g<-g+ scale_colour_discrete(name  ="Weekday or weekend",
-#                           breaks=c("Weekday", "Weekend"),
-#                           labels=c("Weekday", "Weekend"))
-# g<-g+ theme(legend.position=c(.8, .8))
-# g<-g+labs(y="Average Steps",x = "Time in a day (5-min interval)")
-# g<-g+ggtitle("Difference between averge steps taken in Weekday vs Weekend")
-# print(g)
-```
